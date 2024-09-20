@@ -1,11 +1,11 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-// Define the User model
-const User = sequelize.define(
- 'user',
+
+const Cin = sequelize.define(
+ 'cin',
  {
-  USER_ID: {
+  CIN_ID: {
    autoIncrement: true,
    type: DataTypes.BIGINT,
    allowNull: false,
@@ -15,33 +15,36 @@ const User = sequelize.define(
    type: DataTypes.TEXT,
    allowNull: true,
   },
-  user_email: {
-   type: DataTypes.TEXT,
-   allowNull: false,
-   unique: true,
-  },
-  user_psw: {
+
+  user_num: {
    type: DataTypes.TEXT,
    allowNull: true,
   },
-  State: {
-   type: DataTypes.BOOLEAN,
+  user_natio_num: {
+   type: DataTypes.TEXT,
    allowNull: true,
   },
+  user_sifa: {
+   type: DataTypes.TEXT,
+   allowNull: true,
+  },
+
   user_ref_emp: {
    type: DataTypes.TEXT,
    allowNull: true,
   },
-  user_phone: {
-   type: DataTypes.TEXT,
-   allowNull: true,
+  state: {
+   type: DataTypes.BOOLEAN,
+   defaultValue: false,
+   allowNull: false,
   },
+
  },
  {
-  freezeTableName: true,
-  timestamps: true,
+  freezeTableName: true, // Prevent Sequelize from pluralizing table names
+  timestamps: false, // Disable createdAt and updatedAt timestamps
  }
 );
 
 // Export the model
-export default User;
+export default Cin;
