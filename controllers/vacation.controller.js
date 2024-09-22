@@ -1,6 +1,6 @@
 import Vacation from '../models/vacation.js';
+import { Op } from 'sequelize';
 
-// Function to add a new vacation request
 export const addVacation = async (req, res) => {
  const {
   name,
@@ -12,12 +12,10 @@ export const addVacation = async (req, res) => {
  } = req.body;
 
  try {
-  // Validate that all required fields are present
   if (!name || !department || !vacationDays || !vacationStartDay || !vacationEndDate) {
    return res.status(400).json({ message: 'All required fields must be filled' });
   }
 
-  // Create a new vacation request
   const newVacation = await Vacation.create({
    name,
    department,
@@ -25,13 +23,12 @@ export const addVacation = async (req, res) => {
    vacationStartDay,
    vacationEndDate,
    vacationDescription,
-   L1: 'In Progress',  // Default value for L1 approval status
-   L2: 'In Progress',  // Default value for L2 approval status
-   L3: 'In Progress',  // Default value for L3 approval status
-   L4: 'In Progress'   // Default value for L4 approval status
+   L1: 'In Progress',
+   L2: 'In Progress',
+   L3: 'In Progress',
+   L4: 'In Progress'   
   });
 
-  // Respond with the newly created vacation
   return res.status(201).json({
    message: 'Vacation request created successfully',
    vacation: newVacation
@@ -47,8 +44,10 @@ export const addVacation = async (req, res) => {
 
 export const getAllVacations = async (req, res) => {
  try {
-  const vacations = await Vacation.findAll();  // Fetch all vacations from the database
-  res.status(200).json(vacations);  // Send the vacations as JSON response
+  const vacations = await Vacation.findAll({
+   attributes: ['id', 'name', 'vacationStartDay', 'vacationEndDate', 'vacationDays', 'vacationDescription', 'L1', 'L2', 'L3', 'L4']
+  });
+  res.status(200).json(vacations); 
  } catch (error) {
   console.error(error);
   res.status(500).json({ message: 'Error retrieving vacations', error });
@@ -56,12 +55,10 @@ export const getAllVacations = async (req, res) => {
 };
 
 
-// Function to get vacation counts by state
 export const getVacationCountsByState = async (req, res) => {
  try {
-  const vacations = await Vacation.findAll(); // Fetch all vacations
+  const vacations = await Vacation.findAll(); 
 
-  // Initialize counters
   let inProgressCount = 0;
   let refusedCount = 0;
   let acceptedCount = 0;
@@ -78,7 +75,6 @@ export const getVacationCountsByState = async (req, res) => {
    }
   });
 
-  // Return the counts in JSON format
   res.json({
    inProgress: inProgressCount,
    refused: refusedCount,
@@ -87,5 +83,65 @@ export const getVacationCountsByState = async (req, res) => {
  } catch (error) {
   console.error('Error fetching vacation data:', error);
   res.status(500).json({ error: 'Internal server error' });
+ }
+};
+
+export const acceptVacation = async (req, res) => {
+ const { vacationId } = req.params;
+
+ try {
+  const vacation = await Vacation.findByPk(vacationId);
+
+  if (!vacation) {
+   return res.status(404).json({ message: 'Vacation not found' });
+  }
+
+  vacation.L1 = 'Accepted';
+  vacation.L2 = 'Accepted';
+  vacation.L3 = 'Accepted';
+  vacation.L4 = 'Accepted';
+
+  vacation.L1_ACCEPT_DATE = new Date();
+  vacation.L2_ACCEPT_DATE = new Date();
+  vacation.L3_ACCEPT_DATE = new Date();
+  vacation.L4_ACCEPT_DATE = new Date();
+
+  await vacation.save();
+
+  res.status(200).json({
+   message: 'Vacation accepted successfully',
+   vacation
+  });
+ } catch (error) {
+  console.error('Error accepting vacation:', error);
+  return res.status(500).json({ message: 'Internal server error' });
+ }
+};
+
+
+export const countInProgressVacations = async (req, res) => {
+ try {
+  const inProgressCount = await Vacation.count({
+   where: {
+    [Op.or]: [
+     { L1: 'In Progress' },
+     { L2: 'In Progress' },
+     { L3: 'In Progress' },
+     { L4: 'In Progress' }
+    ],
+    [Op.not]: {
+     [Op.and]: [
+      { L1: 'Accepted' },
+      { L2: 'Accepted' },
+      { L3: 'Accepted' },
+      { L4: 'Accepted' }
+     ]
+    }
+   }
+  });
+  res.status(200).json({ inProgressCount });
+ } catch (error) {
+  console.error('Error counting in-progress vacations:', error);
+  res.status(500).json({ message: 'Internal server error' });
  }
 };
